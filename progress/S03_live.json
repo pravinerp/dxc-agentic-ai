@@ -1,0 +1,17 @@
+{
+  "session": "S03",
+  "section": "\u2460 Embeddings",
+  "section_idx": 1,
+  "sections_total": 10,
+  "xp_total": 6,
+  "active_minutes": 2,
+  "quiz_answered": 0,
+  "quiz_correct": 0,
+  "labs_self_reported": {
+    "lab2a": false,
+    "lab2b": false,
+    "lab2c": false
+  },
+  "participant": null,
+  "updated_at": "2026-10-05T04:09:05.331578+00:00"
+}
