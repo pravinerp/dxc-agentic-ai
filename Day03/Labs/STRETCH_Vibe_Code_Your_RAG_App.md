@@ -62,8 +62,8 @@ Fill this table. You will paste these choices into the prompt in Step 2.
 
 | Choice | Your pick (examples) |
 |---|---|
-| App name | `PDF Buddy`, `Doc Oracle`, `AskMyPDF` |
-| Personality | calm senior engineer, cricket commentator, friendly Chennai auto-anna, polite teacher |
+| App name | `PDF Buddy` |
+| Personality | calm senior engineer |
 | Style of talking | short and funny / formal / English with a little Tanglish / always ends with a joke |
 | Colour and theme | teal on dark, saffron on white, neon on black |
 | Avatar emoji | 🤖 🦉 🛠️ 🎩 |
