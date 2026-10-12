@@ -3,7 +3,7 @@
 Run:   python run_6a.py
        python run_6a.py "your own question"
 
-Builds the agent with your make_tools / build_agent / ask (agent6.py), asks one question, prints the result.
+Builds the agent with build_agent (TODO-1, agent6.py), asks one question, prints the result.
 Compare with Day 5: the same agent, with no loop code of your own.
 """
 import sys
@@ -16,8 +16,8 @@ question = sys.argv[1] if len(sys.argv) > 1 else \
 print(f"Model: {model_factory.provider_name()} ({model_factory.model_label()})")
 print(f"Question: {question}\n")
 
-agent = agent6.build_agent(model_factory.get_model(), agent6.make_tools())      # TODO-1 + TODO-2
-out = agent6.ask(agent, question)                                                # TODO-3
+agent = agent6.build_agent(model_factory.get_model(), agent6.make_tools())      # TODO-1 (build_agent)
+out = agent6.ask(agent, question)                                                # built
 
 print("Tools used, in order:", out["tools_used"] or "none")
 print("ANSWER:", out["answer"])

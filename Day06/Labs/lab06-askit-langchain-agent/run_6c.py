@@ -19,9 +19,9 @@ print(f"Question: {question}\n")
 agent = agent6.build_agent(model_factory.get_model(), agent6.make_tools(), agent6.GUARDS)
 start = time.time()
 if "--tokens" in sys.argv:
-    pieces = agent6.stream_tokens(agent, question)             # STRETCH-C
+    pieces = agent6.stream_tokens(agent, question)             # STRETCH-C (optional)
     print(f"\n{len(pieces)} pieces streamed.")
 else:
-    lines = agent6.stream_answer(agent, question)              # TODO-8 (uses describe_step, TODO-7)
+    lines = agent6.stream_answer(agent, question)              # built (TODO-3 is inside describe_step)
     print(f"\n{len(lines)} lines streamed.")
 print(f"Total time: {time.time() - start:.1f} s")

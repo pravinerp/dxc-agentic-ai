@@ -1,9 +1,9 @@
 """check.py  --  run the automatic checks for one part of the lab.
 
 Type ONE of these lines in the VS Code terminal (Terminal > New Terminal), then press Enter:
-    python check.py 6a          Lab 6A   (TODO-1, 2, 3)
-    python check.py 6b          Lab 6B   (TODO-4, 5, 6)
-    python check.py 6c          Lab 6C   (TODO-7, 8)
+    python check.py 6a          Lab 6A   (TODO-1)
+    python check.py 6b          Lab 6B   (TODO-2)
+    python check.py 6c          Lab 6C   (TODO-3)
     python check.py stretch     the optional stretch challenge
     python check.py all         everything
 
@@ -16,9 +16,9 @@ from pathlib import Path
 import pytest
 
 PARTS = {
-    "6a": "challenge_1 or challenge_2 or challenge_3",
-    "6b": "challenge_4 or challenge_5 or challenge_6",
-    "6c": "challenge_7 or challenge_8",
+    "6a": "test_6a_",
+    "6b": "test_6b_",
+    "6c": "test_6c_",
     "stretch": "stretch",
 }
 part = sys.argv[1].lower() if len(sys.argv) > 1 else "all"

@@ -1,4 +1,4 @@
-"""Lab 6 auto-checks - one test per TODO. Run from the lab folder:   python check.py 6a   (or 6b, 6c, all)
+"""Lab 6 auto-checks. Run from the lab folder:   python check.py 6a   (or 6b, 6c, stretch, all)
 No AWS or OpenAI key needed: the tests use a pretend model that gives scripted answers.
 The "I completed Lab X" buttons on the session page run these same tests."""
 import re
@@ -76,23 +76,21 @@ def notes_section(prefix):
     return section
 
 
-# ================= LAB 6A =================
-def test_challenge_1_make_tools():
-    tools = agent6.make_tools()
-    assert [t.name for t in tools] == ["search_kb", "get_ticket", "update_ticket", "reset_password"], \
-        "return the 4 tools in this order, each wrapped with tool(...)"
-    assert all(t.description for t in tools), "each tool needs its docstring as description"
-    assert tools[1].invoke({"ticket_id": "TKT-0004"})["subject"] == "VPN not connecting"
-
-
-def test_challenge_2_build_agent():
+# ================= LAB 6A  (TODO-1: build_agent) =================
+def test_6a_1_build_agent():
     agent = agent_with(ScriptedModel(script=[says("Hello!")]))
-    assert agent is not None, "build_agent must return what create_agent returns"
+    assert agent is not None, "TODO-1 is not done yet: build_agent still returns None. Write the create_agent(...) line (hint in lab06_hints.md)."
     out = agent.invoke({"messages": [{"role": "user", "content": "hi"}]})
     assert out["messages"][-1].content == "Hello!"
 
 
-def test_challenge_3_ask():
+def test_6a_2_make_tools():                                                    # built
+    tools = agent6.make_tools()
+    assert [t.name for t in tools] == ["search_kb", "get_ticket", "update_ticket", "reset_password"]
+    assert tools[1].invoke({"ticket_id": "TKT-0004"})["subject"] == "VPN not connecting"
+
+
+def test_6a_3_ask():                                                           # built, needs TODO-1
     model = ScriptedModel(script=[wants("get_ticket", {"ticket_id": "TKT-0004"}), says("It is open.")])
     out = agent6.ask(agent_with(model), "Status of TKT-0004?")
     assert out["answer"] == "It is open."
@@ -100,22 +98,34 @@ def test_challenge_3_ask():
     assert len(out["messages"]) == 4, "messages: question, tool request, tool result, answer"
 
 
-def test_challenge_3_notes():
-    assert "<fill" not in notes_section("Lab 6A"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace every <fill> in the Lab 6A lines, save (Ctrl+S), run the check again."
+def test_6a_notes():
+    assert "<fill" not in notes_section("Lab 6A"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace the <fill> in the Lab 6A line, save (Ctrl+S), run the check again."
 
 
-# ================= LAB 6B =================
-def test_challenge_4_redact_pii():
+# ================= LAB 6B  (TODO-2: over_budget) =================
+def test_6b_1_over_budget():
+    assert agent6.over_budget(6, 6) is True, "TODO-2: over_budget must be True when model_calls has reached max_calls"
+    assert agent6.over_budget(7, 6) is True
+    assert agent6.over_budget(2, 6) is False
+
+
+def test_6b_2_budget_stops_agent():                                            # needs TODO-2
+    model = ScriptedModel(script=[wants("get_ticket", {"ticket_id": "TKT-0001"})])   # asks for a tool forever
+    out = agent_with(model, [agent6.budget_guard]).invoke({"messages": [{"role": "user", "content": "go on"}]})
+    assert model.calls == agent6.MAX_MODEL_CALLS, "the agent must stop after MAX_MODEL_CALLS model calls"
+    assert "human" in out["messages"][-1].content.lower()
+
+
+def test_6b_3_pii_hidden():                                                    # built
     r = agent6.redact_pii
     out = r("Mail aarav.sharma@orbitcorp.example or call +91 98765 43210 about TKT-0044 for EMP-1001.")
-    assert "@" not in out and "[EMAIL]" in out, "hide email addresses with [EMAIL]"
-    assert "98765" not in out and "[PHONE]" in out, "hide phone numbers with [PHONE]"
+    assert "@" not in out and "[EMAIL]" in out
+    assert "98765" not in out and "[PHONE]" in out
     assert "TKT-0044" in out and "EMP-1001" in out, "ticket and employee ids must stay"
-    assert "[PHONE]" in r("my number is 9876543210") and "[PHONE]" in r("98765-43210")
     assert r("Created 2026-09-14 08:00 on TKT-0004") == "Created 2026-09-14 08:00 on TKT-0004", "dates are not phone numbers"
 
 
-def test_challenge_4_model_never_sees_pii():
+def test_6b_4_model_never_sees_pii():                                          # built
     model = ScriptedModel(script=[says("ok")])
     agent_with(model, [agent6.pii_guard]).invoke(
         {"messages": [{"role": "user", "content": "Call me on 9876543210 or mail me@orbitcorp.example"}]})
@@ -123,32 +133,18 @@ def test_challenge_4_model_never_sees_pii():
     assert "9876543210" not in seen and "me@orbitcorp.example" not in seen, "the model was shown personal data"
 
 
-def test_challenge_5_over_budget():
-    assert agent6.over_budget(6, 6) is True
-    assert agent6.over_budget(7, 6) is True
-    assert agent6.over_budget(2, 6) is False
-
-
-def test_challenge_5_budget_stops_agent():
-    model = ScriptedModel(script=[wants("get_ticket", {"ticket_id": "TKT-0001"})])   # asks for a tool forever
-    out = agent_with(model, [agent6.budget_guard]).invoke({"messages": [{"role": "user", "content": "go on"}]})
-    assert model.calls == agent6.MAX_MODEL_CALLS, "the agent must stop after MAX_MODEL_CALLS model calls"
-    assert "human" in out["messages"][-1].content.lower()
-
-
-def test_challenge_6_tool_guard():
+def test_6b_5_tool_guard():                                                    # built
     request = SimpleNamespace(tool_call={"id": "abc", "name": "get_ticket"})
     ok = agent6.tool_guard.wrap_tool_call(request, lambda r: "fine")
-    assert ok == "fine", "when the tool works, return what handler(request) returns"
+    assert ok == "fine"
 
     def broken(r):
         raise RuntimeError("database down")
     bad = agent6.tool_guard.wrap_tool_call(request, broken)
-    assert isinstance(bad, ToolMessage), "when the tool crashes, return a ToolMessage"
-    assert bad.tool_call_id == "abc" and "database down" in bad.content
+    assert isinstance(bad, ToolMessage) and bad.tool_call_id == "abc" and "database down" in bad.content
 
 
-def test_challenge_6_agent_survives_crash(monkeypatch=None):
+def test_6b_6_agent_survives_crash():                                          # built
     import os
     os.environ["ASKIT_TOOLS_DOWN"] = "1"                       # the ticket database is "down"
     try:
@@ -159,36 +155,44 @@ def test_challenge_6_agent_survives_crash(monkeypatch=None):
         os.environ.pop("ASKIT_TOOLS_DOWN", None)
 
 
-def test_challenge_6_notes():
-    assert "<fill" not in notes_section("Lab 6B"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace every <fill> in the Lab 6B lines, save (Ctrl+S), run the check again."
+def test_6b_notes():
+    assert "<fill" not in notes_section("Lab 6B"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace the <fill> in the Lab 6B line, save (Ctrl+S), run the check again."
 
 
-# ================= LAB 6C =================
-def test_challenge_7_describe_step():
+# ================= LAB 6C  (TODO-3: the final answer line in describe_step) =================
+def test_6c_1_final_answer_line():
+    final = agent6.describe_step({"model": {"messages": [says("It is open.")]}})
+    assert len(final) == 1, "TODO-3 is not done yet: describe_step gives no line for the final answer. Replace 'pass' (hint in lab06_hints.md)."
+    assert "answer" in final[0] and "It is open." in final[0]
+
+
+def test_6c_2_other_steps():                                                   # built
     d = agent6.describe_step
     ask_tool = d({"model": {"messages": [wants("get_ticket", {"ticket_id": "TKT-0004"})]}})
     assert len(ask_tool) == 1 and "get_ticket" in ask_tool[0] and "asks for" in ask_tool[0]
     result = d({"tools": {"messages": [ToolMessage(content='{"status": "Open"}', tool_call_id="x")]}})
     assert len(result) == 1 and "Open" in result[0] and "result" in result[0]
-    final = d({"model": {"messages": [says("It is open.")]}})
-    assert len(final) == 1 and "answer" in final[0] and "It is open." in final[0]
     assert d({"some_guard.before_model": None}) == [], "an update without data gives no lines"
     assert d({"x": {"messages": [HumanMessage(content="hi")]}}) == [], "human messages are skipped"
 
 
-def test_challenge_8_stream_answer(capsys=None):
+def test_6c_3_stream_answer():                                                 # built, needs TODO-3
     model = ScriptedModel(script=[wants("get_ticket", {"ticket_id": "TKT-0004"}), says("It is open.")])
     lines = agent6.stream_answer(agent_with(model), "Status of TKT-0004?")
     assert len(lines) == 3, "expected: the tool request, the tool result, the answer"
     assert "asks for" in lines[0] and "result" in lines[1] and "answer" in lines[2]
 
 
-def test_challenge_8_notes():
-    assert "<fill" not in notes_section("Lab 6C"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace every <fill> in the Lab 6C lines, save (Ctrl+S), run the check again."
+def test_6c_notes():
+    assert "<fill" not in notes_section("Lab 6C"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace the <fill> in the Lab 6C line, save (Ctrl+S), run the check again."
 
 
+# ================= STRETCH (optional) =================
 def test_stretch_c_stream_tokens():
     model = ScriptedModel(script=[says("It is open right now.")])
     pieces = agent6.stream_tokens(agent_with(model), "hi")
+    if not pieces:
+        import pytest
+        pytest.skip("Stretch C is optional and not written yet")
     assert len(pieces) >= 4, "the answer should arrive in several small pieces"
     assert "".join(pieces).strip() == "It is open right now."

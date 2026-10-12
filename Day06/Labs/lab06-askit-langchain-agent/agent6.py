@@ -1,17 +1,13 @@
 """agent6.py  --  yesterday you wrote the agent loop by hand. Today LangChain gives you that loop, ready made.
 
-You will build AskIT again, in 3 steps. Each step is one lab:
+Three small parts. Each part has ONE thing for you to write. It is marked TODO and it is ONE line:
 
-    Lab 6A  TODO-1, 2, 3   build the agent with LangChain  (about 10 lines instead of 100)
-    Lab 6B  TODO-4, 5, 6   add MIDDLEWARE: small guards that run around the model and the tools
-    Lab 6C  TODO-7, 8      STREAMING: watch the agent work step by step instead of waiting
+    Lab 6A  TODO-1   build_agent     one line that creates the agent
+    Lab 6B  TODO-2   over_budget     one comparison that stops a runaway agent
+    Lab 6C  TODO-3   describe_step   one line that shows the final answer while it streams
 
-Everything NOT marked TODO is already built. Read the comments: they explain each line.
-Hints and full answers:  Day06\\Hints\\lab06_hints.md
-
-Compare with Day 5:    your loop (while / for)        ->  create_agent(...)
-                       your run_tool + TOOLS dict      ->  LangChain "tools"
-                       your give_up / is_repeat checks ->  middleware
+Everything NOT marked TODO is already built. Read the comments, run it, change one value, see what happens.
+Stuck? Full line:  Day06\\Hints\\lab06_hints.md   (search for TODO-1, TODO-2 or TODO-3)
 """
 import json
 import re
@@ -60,65 +56,58 @@ def short(value, limit=110):
 # LAB 6A  -  BUILD THE AGENT WITH LANGCHAIN
 # =============================================================================================
 def make_tools():
-    """TODO-1: turn the 4 plain Python functions into LangChain tools.
-
-    The functions are already imported at the top: search_kb, get_ticket, update_ticket, reset_password.
-    tool(some_function) wraps one function. LangChain reads the function's name, its docstring (= the description
-    the model sees) and its inputs. Return the 4 tools in a list, in that order.
-    """
-    return []
+    """(built) Wraps the 4 Day 5 functions as LangChain tools: search_kb, get_ticket, update_ticket, reset_password."""
+    return [tool(search_kb), tool(get_ticket), tool(update_ticket), tool(reset_password)]
 
 
 def build_agent(model, tools, middleware=None):
-    """TODO-2: create the agent. create_agent builds the whole loop (think, act, observe, repeat) for you.
+    """TODO-1 (Lab 6A): create the agent. ONE line to write.
 
-    Call create_agent with these named inputs:
-        model=model              the chat model
-        tools=tools              the list from make_tools()
+    create_agent(...) builds the whole loop for you: think, act, observe, repeat.
+    Replace the line  'return None'  with ONE line that calls create_agent with:
+        model=model
+        tools=tools
         system_prompt=SYSTEM_PROMPT
-        middleware=middleware or []      (the guards you add in Lab 6B; an empty list for now)
-    and return what it gives back.
+        middleware=middleware or []
+    Use exactly these names. Then run:  python check.py 6a
     """
-    return None
+    return None  # TODO-1: replace this line with: return create_agent(...)
 
 
 def ask(agent, question):
-    """TODO-3: ask the agent one question and return a dict:
-         {"answer": <the final text>, "tools_used": [<tool names, in order>], "messages": <all messages>}
-
-    How: result = agent.invoke({"messages": [{"role": "user", "content": question}]})
-         result["messages"] is the whole conversation (a list of messages).
-         - the LAST message is the final answer  -> use text_of(...)
-         - every AIMessage has .tool_calls, a list of dicts with a "name" -> collect all the names
-    """
-    return {"answer": "", "tools_used": [], "messages": []}
+    """(built) Asks the agent one question and returns the answer, the tool names used, and the messages."""
+    result = agent.invoke({"messages": [{"role": "user", "content": question}]})
+    messages = result["messages"]
+    answer = text_of(messages[-1])
+    tools_used = [call["name"] for m in messages if isinstance(m, AIMessage) for call in m.tool_calls]
+    return {"answer": answer, "tools_used": tools_used, "messages": messages}
 
 
 # =============================================================================================
 # LAB 6B  -  MIDDLEWARE: GUARDS AROUND THE MODEL AND THE TOOLS
 # =============================================================================================
 # Middleware = small functions LangChain calls at fixed moments:
-#     before_model  ->  just BEFORE every model call   (look at, change or stop the conversation)
+#     before_model   ->  just BEFORE every model call   (look at, change or stop the conversation)
 #     wrap_tool_call -> AROUND every tool call          (catch errors, log, block)
 # You write the logic. LangChain decides WHEN it runs.
 
-MAX_MODEL_CALLS = 6        # the same limit as Day 5's MAX_STEPS
+MAX_MODEL_CALLS = 6        # the maximum number of model calls before the guard stops the agent (same idea as Day 5)
 
 
 def redact_pii(text):
-    """TODO-4: hide personal data BEFORE the model sees it.
-
-    Replace every email address with [EMAIL] and every phone number with [PHONE]. Use re.sub twice.
-    Email pattern : r"[\\w.+-]+@[\\w-]+\\.[\\w.-]+"
-    Phone pattern : r"(?<!\\d)(\\+?\\d{2}[\\s-]?)?\\d{5}[\\s-]?\\d{5}(?!\\d)"      (10 digits, optional +91 in front)
-    Ticket ids like TKT-0004 and employee ids like EMP-1021 must stay untouched.
-    """
+    """(built) Replaces email addresses with [EMAIL] and phone numbers with [PHONE]. Ticket and employee ids stay."""
+    text = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "[EMAIL]", text)                         # name@company.com
+    text = re.sub(r"(?<!\d)(\+?\d{2}[\s-]?)?\d{5}[\s-]?\d{5}(?!\d)", "[PHONE]", text)   # +91 98765 43210
     return text
 
 
 def over_budget(model_calls, max_calls):
-    """TODO-5: True when the agent has used up its model calls (model_calls has reached max_calls)."""
-    return False
+    """TODO-2 (Lab 6B): True when the agent has used up its model calls. ONE line to write.
+
+    Ask: has model_calls reached max_calls?  Use >=  (greater than or equal).
+    Replace the line  'return False'  with ONE comparison. Then run:  python check.py 6b
+    """
+    return False  # TODO-2: replace this line with one comparison
 
 
 @before_model
@@ -145,52 +134,54 @@ def budget_guard(state, runtime):
 
 @wrap_tool_call
 def tool_guard(request, handler):
-    """TODO-6: wrap every tool call so a crashing tool does not crash the agent.
-
-    request = the tool call (request.tool_call is a dict with "id" and "name")
-    handler(request) = actually runs the tool and returns its result (a ToolMessage)
-
-    Do this:  try to return handler(request).
-              If it raises any Exception e, return a ToolMessage instead:
-                  ToolMessage(content=f"Tool failed: {e}. Tell the user a human will follow up.",
-                              tool_call_id=request.tool_call["id"])
-    (Day 5 did the same inside run_tool.)
-    """
-    return handler(request)
+    """(built) Runs AROUND every tool call. If a tool crashes, the agent gets a short error message instead of crashing."""
+    try:
+        return handler(request)                                       # run the tool normally
+    except Exception as e:                                            # the tool crashed (e.g. database down)
+        return ToolMessage(content=f"Tool failed: {e}. Tell the user a human will follow up.",
+                           tool_call_id=request.tool_call["id"])      # the model gets an error it can explain
 
 
-GUARDS = [pii_guard, budget_guard, tool_guard]      # the three guards together. Pass this list to build_agent in Lab 6B.
+GUARDS = [pii_guard, budget_guard, tool_guard]      # the three guards together. Passed to build_agent in Lab 6B.
 
 
 # =============================================================================================
 # LAB 6C  -  STREAMING: SEE EACH STEP AS IT HAPPENS
 # =============================================================================================
 def describe_step(update):
-    """TODO-7: turn ONE streamed update into printable lines (a list of strings).
+    """Turns ONE streamed update into printable lines (a list of strings).
 
-    agent.stream(..., stream_mode="updates") gives one update per step, shaped like:
-         {"model": {"messages": [AIMessage]}}   or   {"tools": {"messages": [ToolMessage]}}
-    For each message inside (use update.values(), then data["messages"]):
-         an AIMessage WITH tool_calls  -> for each call: f"🔧 asks for {call['name']}({short(call['args'])})"
-         an AIMessage without tool_calls -> f"✅ answer: {text_of(m)}"
-         a ToolMessage                 -> f"👁️ result: {short(text_of(m))}"
-         anything else (e.g. HumanMessage) -> skip
-    Some updates have data = None: skip those.
+    One TODO here: the final answer line (TODO-3). Everything else is built.
     """
-    return []
+    lines = []
+    for data in update.values():
+        if not isinstance(data, dict):                                  # some steps carry no data
+            continue
+        for m in data.get("messages", []):
+            if isinstance(m, AIMessage) and m.tool_calls:               # the model asks for a tool
+                for call in m.tool_calls:
+                    lines.append(f"🔧 asks for {call['name']}({short(call['args'])})")
+            elif isinstance(m, AIMessage):
+                # TODO-3 (Lab 6C): the final answer. ONE line to write.
+                # Replace the word 'pass' with:  lines.append(f"✅ answer: {text_of(m)}")
+                pass  # TODO-3
+            elif isinstance(m, ToolMessage):                            # a tool result came back
+                lines.append(f"👁️ result: {short(text_of(m))}")
+    return lines
 
 
 def stream_answer(agent, question):
-    """TODO-8: ask the agent a question and print every step AS IT HAPPENS. Return the list of printed lines.
-
+    """(built) Asks the agent a question and prints every step AS IT HAPPENS. Returns the printed lines."""
+    printed = []
     for update in agent.stream({"messages": [{"role": "user", "content": question}]}, stream_mode="updates"):
-        ...use describe_step(update); print each line and keep it in a list...
-    """
-    return []
+        for line in describe_step(update):          # one update can hold several lines
+            print(line, flush=True)                 # show it NOW, not at the end
+            printed.append(line)
+    return printed
 
 
 def stream_tokens(agent, question):
-    """STRETCH-C: stream the answer WORD BY WORD. Return the list of text pieces.
+    """STRETCH-C (optional): stream the answer WORD BY WORD. Returns the list of text pieces.
 
     for chunk, meta in agent.stream({...same input...}, stream_mode="messages"):
         chunk = a small piece of a message;  meta["langgraph_node"] says where it came from.
