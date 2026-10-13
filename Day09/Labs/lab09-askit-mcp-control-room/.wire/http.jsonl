@@ -1,0 +1,4 @@
+{"time": "10:14:47", "method": "server/discover", "params": {"method": "server/discover", "params": {"meta": {"io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientInfo": {"name": "mcp", "version": "0.1.0"}, "io.modelcontextprotocol/clientCapabilities": {"elicitation": {"form": {}, "url": {}}}}}}, "ms": 2, "error": ""}
+{"time": "10:14:48", "method": "tools/list", "params": {"method": "tools/list"}, "ms": 810, "error": ""}
+{"time": "10:14:49", "method": "tools/list", "params": {"method": "tools/list"}, "ms": 2, "error": ""}
+{"time": "10:14:49", "method": "tools/call", "params": {"name": "reset_password", "arguments": {"user_id": "EMP-1001"}}, "ms": 6, "error": ""}
